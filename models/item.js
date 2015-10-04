@@ -1,5 +1,7 @@
 var _ = require('underscore'),
-    uuid4 = require('UuidHelper').uuid4;
+    uuid4 = require('UuidHelper').uuid4,
+    round = require('RoundingHelper').round;
+
 
 /**
  * Class for holding items in the Settlement
@@ -18,40 +20,55 @@ function Item(name, price, identitiesPayed, identitiesToPay, valuesPayed) {
     this.identitiesToPay = identitiesToPay;
     this.valuesPayed = valuesPayed;
 
-    //TODO calculate proportions
-    //TODO calculate remainders
-    //TODO calculate returns (remainders * proportions)
-    //TODO implement separate class for rounding values
-    this.calculateValuesToPayBack();
+    this.calculate();
 }
 
-Item.prototype.calculateValuesToPayBack = function () {
+/**
+ * Calculates values that Identities have to return each other
+ */
+Item.prototype.calculate = function () {
     var that = this;
-    var pricePerIdentity = Math.floor(that.price / that.identitiesToPay.length);
-    var result = {};
-    var partial;
-    var currentUuid;
-    var remainder;
+    that.calculatePaidProportions();
+    that.calculateRemainderToPay();
+    that.calculateValuesToPay();
+};
 
+/**
+ * Calculates
+ */
+Item.prototype.calculatePaidProportions = function(){
+    var that = this;
+    that.proportionsPaid = {};
 
-    _.each(that.identitiesToPay, function (identityToPay) {
-            currentUuid = identityToPay.uuid;
-            result[currentUuid] = {};
-
-            if (identityToPay in that.identitiesPayed) {
-                remainder = that.valuesPayed[currentUuid] - pricePerIdentity;
-            }
-            else {
-                remainder = pricePerIdentity;
-            }
-            _.each(that.valuesPayed, function(value, uuid){
-
-            })
-
-        }
-    )
+    _.forEach(that.valuesPayed, function(valuePaid, uuidPaid){
+        that.proportionsPaid[uuidPaid] = valuePaid / that.price;
+    })
 
 };
 
+Item.prototype.calculateRemainderToPay = function(){
+    var that = this;
+    that.remaindersToPay = {};
+    var pricePerIdentity = round(that.price / that.identitiesToPay.length);
+    _.forEach(that.identitiesToPay, function(uuidToPay){
+        if (uuidToPay in that.identitiesPayed) {
+            that.remaindersToPay[uuidToPay] = pricePerIdentity - that.valuesPayed[uuidToPay];
+        }else{
+            that.remaindersToPay[uuidToPay] = pricePerIdentity;
+        }
+    })
+};
+
+Item.prototype.calculateValuesToPay = function(){
+    var that = this;
+    that.valuesToPay = {};
+    _.forEach(that.remaindersToPay, function(remainderToPay, uuidToPay){
+        that.valuesToPay[uuidToPay] = {};
+
+        _.forEach(that.proportionsPaid, function(proportionPaid, uuidPaid){
+            that.valuesToPay[uuidToPay][uuidPaid] = round(remainderToPay * proportionPaid);
+        })
+    })
+};
 
 module.export = Item;
