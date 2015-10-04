@@ -29,7 +29,7 @@ function Settlement(name) {
 Settlement.prototype.addItem = function (item) {
     var that = this;
     that.items.push(item);
-    that.identities = _.union(that.identities, item.identitiesPayed, item.identitiesToPay);
+    that.identities = _.union(that.identities, item.identitiesPaid, item.identitiesToPay);
 };
 
 Settlement.prototype.removeItemAtIndex = function (index) {

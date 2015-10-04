@@ -7,7 +7,7 @@ var _ = require('underscore'),
  * Class for holding items in the Settlement
  * @field name {String}
  * @field price {Number}
- * @field identitiesPayed {Array} of Uuids
+ * @field identitiesPaid {Array} of Uuids
  * @field identitiesToPay {Array} of Uuids
  * @field valuesPaid {Object} a map <Uuid>:<Value>how much each Identity paid
  * @field remaindersToPay {Object} a map <Uuid>:<Value>how much each Identity has to pay in total
@@ -18,16 +18,16 @@ var _ = require('underscore'),
 /**
  * @param name {String}
  * @param price {Number} integer value of the item in smallest indivisible value in a Currency
- * @param identitiesPayed {Array}
+ * @param identitiesPaid {Array}
  * @param identitiesToPay {Array}
  * @param valuesPayed {Object} a map <Uuid>:<Number>how much each identity paid
  * @constructor
  */
-function Item(name, price, identitiesPayed, identitiesToPay, valuesPayed) {
+function Item(name, price, identitiesPaid, identitiesToPay, valuesPayed) {
     this.uuid = uuid4();
     this.name = name;
     this.price = price;
-    this.identitiesPayed = identitiesPayed;
+    this.identitiesPaid = identitiesPaid;
     this.identitiesToPay = identitiesToPay;
     this.valuesPaid = valuesPayed;
     this.remaindersToPay = {};
@@ -53,11 +53,14 @@ Item.prototype.calculate = function () {
 Item.prototype.calculatePaidProportions = function(){
     var that = this;
     that.proportionsPaid = {};
+    var total = 0;
 
     _.forEach(that.valuesPaid, function(valuePaid, uuidPaid){
         that.proportionsPaid[uuidPaid] = valuePaid / that.price;
-    })
+        total += valuePaid;
+    });
 
+    //TODO implement error throwing when Item.valuesPaid do not sum up to Item.price
 };
 
 /**
@@ -68,7 +71,7 @@ Item.prototype.calculateRemainderToPay = function(){
     that.remaindersToPay = {};
     var pricePerIdentity = round(that.price / that.identitiesToPay.length);
     _.forEach(that.identitiesToPay, function(uuidToPay){
-        if (uuidToPay in that.identitiesPayed) {
+        if (uuidToPay in that.identitiesPaid) {
             that.remaindersToPay[uuidToPay] = pricePerIdentity - that.valuesPaid[uuidToPay];
         }else{
             that.remaindersToPay[uuidToPay] = pricePerIdentity;

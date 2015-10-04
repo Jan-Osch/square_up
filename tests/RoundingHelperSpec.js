@@ -1,5 +1,5 @@
 describe('RoundingHelper', function () {
-    var round = require('./RoundingHelper.js').round;
+    var round = require('../source/RoundingHelper.js').round;
     it('function round is defined', function () {
         expect(round).toBeDefined();
     });
