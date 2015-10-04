@@ -1,28 +1,15 @@
-function SettlementResult(identities) {
-    this.identities = identities;
-    this.result = this.createTwoDimensionalArray(identities.length, 0);
-}
+var uuid4 = require('UuidHelper').uuid4;
 
-SettlementResult.prototype.createTwoDimensionalArray = function (size, value) {
-    if (!value) {
-        value = 0;
-    }
-    var result = [];
-    var temp;
-    for (var i = 0; i < size; i++) {
-        temp = [];
-        for (var j = 0; j < size; j++) {
-            temp.push(value);
-        }
-        result.push(temp);
-    }
-    return result;
-};
+function SettlementResult(identities) {
+    this.uuid = uuid4();
+    this.identities = identities;
+    this.valuesToPaidBack = this.createTwoDimensionalArray(identities.length, 0);
+    this.values
+}
 
 SettlementResult.prototype.addItem = function (item) {
     var that = this;
     var costPerIdentity = Math.floor(item.price / item.identitiesToPay.length);
-
 };
 
 
