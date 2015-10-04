@@ -2,7 +2,7 @@ describe('Identity', function(){
     var Identity,
         identity;
     beforeEach(function(){
-        Identity = require('../../lib/models/Identity.js').Identity;
+        Identity = require('.././models/Identity.js').Identity;
         identity = undefined;
     });
 
