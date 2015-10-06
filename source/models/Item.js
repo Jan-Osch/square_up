@@ -12,7 +12,7 @@ var _ = require('underscore'),
  * @field valuesPaid {Object} a map <Uuid>:<Value>how much each Identity paid
  * @field remaindersToPay {Object} a map <Uuid>:<Value>how much each Identity has to pay in total
  * @field valuesToPay {Object} a map <Uuid>:<Uuid>:<Value>how much each Identity has to pay to each specific Identity
- * @field proportionsPaid{Object} a map <Uuid>:<Value>how much each of the items price each Identity paid
+ * @field proportionsOverpaid{Object} a map <Uuid>:<Value>how much each of the items price each Identity paid
  */
 
 /**
@@ -32,7 +32,7 @@ function Item(name, price, identitiesPaid, identitiesToPay, valuesPayed) {
     this.valuesPaid = valuesPayed;
     this.remaindersToPay = {};
     this.valuesToPay = {};
-    this.proportionsPaid = {};
+    this.proportionsOverpaid = {};
 
     this.calculate();
 }
@@ -42,22 +42,39 @@ function Item(name, price, identitiesPaid, identitiesToPay, valuesPayed) {
  */
 Item.prototype.calculate = function () {
     var that = this;
-    that.calculatePaidProportions();
+    that.calculateOverpaidProportions();
     that.calculateRemainderToPay();
     that.calculateValuesToPay();
 };
 
 /**
- * Calculates and saves proportion of how much each Identity paid of the items price
+ * Calculates and saves how much each Identity paid more than it should.
+ * Also increments that.totalOverpaid.
  */
-Item.prototype.calculatePaidProportions = function(){
+Item.prototype.calculateOverpaidProportions = function () {
     var that = this;
-    that.proportionsPaid = {};
+    that.proportionsOverpaid = {};
     var total = 0;
-
-    _.forEach(that.valuesPaid, function(valuePaid, uuidPaid){
-        that.proportionsPaid[uuidPaid] = valuePaid / that.price;
+    var overpaid;
+    var totalOverpaid = 0;
+    var pricePerIdentity = round(that.price / that.identitiesToPay.length);
+    _.forEach(that.valuesPaid, function (valuePaid, uuidPaid) {
+        if (uuidPaid in that.identitiesToPay) {
+            overpaid = valuePaid - pricePerIdentity;
+        }
+        else {
+            console.log(uuidPaid, 'not in', that.identitiesPaid);
+            console.log(that.identitiesPaid.indexOf(uuidPaid));
+            overpaid = valuePaid;
+        }
+        if (overpaid > 0) {
+            that.proportionsOverpaid[uuidPaid] = overpaid
+        }
+        totalOverpaid += overpaid;
         total += valuePaid;
+    });
+    _.forEach(that.proportionsOverpaid, function (valueOverpaid, uuidOverpaid) {
+        that.proportionsOverpaid[uuidOverpaid] = valueOverpaid / totalOverpaid;
     });
 
     //TODO implement error throwing when Item.valuesPaid do not sum up to Item.price
@@ -66,14 +83,17 @@ Item.prototype.calculatePaidProportions = function(){
 /**
  * Calculates and saves how much each Identity has to pay back in total
  */
-Item.prototype.calculateRemainderToPay = function(){
+Item.prototype.calculateRemainderToPay = function () {
     var that = this;
     that.remaindersToPay = {};
     var pricePerIdentity = round(that.price / that.identitiesToPay.length);
-    _.forEach(that.identitiesToPay, function(uuidToPay){
-        if (uuidToPay in that.identitiesPaid) {
-            that.remaindersToPay[uuidToPay] = pricePerIdentity - that.valuesPaid[uuidToPay];
-        }else{
+    _.forEach(that.identitiesToPay, function (uuidToPay) {
+        if (uuidToPay in that.valuesPaid) {
+            var remainder = pricePerIdentity - that.valuesPaid[uuidToPay];
+            if (remainder > 0) {
+                that.remaindersToPay[uuidToPay] = remainder;
+            }
+        } else {
             that.remaindersToPay[uuidToPay] = pricePerIdentity;
         }
     })
@@ -82,14 +102,14 @@ Item.prototype.calculateRemainderToPay = function(){
 /**
  * Calculates and saves how much each Identity has to pay back to each Identity
  */
-Item.prototype.calculateValuesToPay = function(){
+Item.prototype.calculateValuesToPay = function () {
     var that = this;
     that.valuesToPay = {};
-    _.forEach(that.remaindersToPay, function(remainderToPay, uuidToPay){
+    _.forEach(that.remaindersToPay, function (remainderToPay, uuidToPay) {
         that.valuesToPay[uuidToPay] = {};
 
-        _.forEach(that.proportionsPaid, function(proportionPaid, uuidPaid){
-            that.valuesToPay[uuidToPay][uuidPaid] = round(remainderToPay * proportionPaid);
+        _.forEach(that.proportionsOverpaid, function (proportionOverpaid, uuidPaid) {
+            that.valuesToPay[uuidToPay][uuidPaid] = round(remainderToPay * proportionOverpaid);
         })
     })
 };
