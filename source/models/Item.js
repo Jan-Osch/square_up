@@ -1,6 +1,7 @@
 var _ = require('underscore'),
     uuid4 = require('./../UuidHelper.js').uuid4,
-    round = require('./../RoundingHelper.js').round;
+    round = require('./../RoundingHelper.js').round,
+    assert = require('assert');
 
 
 /**
@@ -33,9 +34,20 @@ function Item(name, price, identitiesPaid, identitiesToPay, valuesPayed) {
     this.remaindersToPay = {};
     this.valuesToPay = {};
     this.proportionsOverpaid = {};
-
+    this.validateData();
     this.calculate();
 }
+
+Item.prototype.validateData = function () {
+    var that = this;
+    var total = 0;
+    assert.equal(_.intersection(that.identitiesPaid, Object.keys(that.valuesPaid)).length, that.identitiesPaid.length, 'Item.identitiesPaid have to be the same as keys of Item.valuesPaid');
+    _.forEach(this.valuesPaid, function (valuePaid, uuidPaid) {
+        assert(valuePaid > 0, 'ValuePaid must be a positive integer');
+        total += valuePaid;
+    });
+    assert.equal(total, that.price, "Item.valuesPaid have to sum up to price");
+};
 
 /**
  * Calculates values that Identities have to return each other
@@ -48,36 +60,32 @@ Item.prototype.calculate = function () {
 };
 
 /**
- * Calculates and saves how much each Identity paid more than it should.
- * Also increments that.totalOverpaid.
+ * Overpaid means how much and Identity paid more than it should.
+ * Overpaid for an Identity that paid less than it should it 0 or does not exist.
+ * This function calculates sums up overpaid for all Identities(totalOverpaid),
+ * then for each Identity calculates proportion how much that identity overpaid to totalOverpaid
  */
 Item.prototype.calculateOverpaidProportions = function () {
     var that = this;
     that.proportionsOverpaid = {};
-    var total = 0;
     var overpaid;
     var totalOverpaid = 0;
     var pricePerIdentity = round(that.price / that.identitiesToPay.length);
     _.forEach(that.valuesPaid, function (valuePaid, uuidPaid) {
-        if (uuidPaid in that.identitiesToPay) {
+        if (that.identitiesToPay.indexOf(uuidPaid) >= 0) {
             overpaid = valuePaid - pricePerIdentity;
         }
         else {
-            console.log(uuidPaid, 'not in', that.identitiesPaid);
-            console.log(that.identitiesPaid.indexOf(uuidPaid));
             overpaid = valuePaid;
         }
         if (overpaid > 0) {
-            that.proportionsOverpaid[uuidPaid] = overpaid
+            that.proportionsOverpaid[uuidPaid] = overpaid;
+            totalOverpaid += overpaid;
         }
-        totalOverpaid += overpaid;
-        total += valuePaid;
     });
     _.forEach(that.proportionsOverpaid, function (valueOverpaid, uuidOverpaid) {
         that.proportionsOverpaid[uuidOverpaid] = valueOverpaid / totalOverpaid;
     });
-
-    //TODO implement error throwing when Item.valuesPaid do not sum up to Item.price
 };
 
 /**
