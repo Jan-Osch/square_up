@@ -1,4 +1,4 @@
-var uuid4 = require('UuidHelper').uuid4,
+var uuid4 = require('../UuidHelper').uuid4,
     _ = require('underscore'),
     SettlementResult = require('./SettlementResult.js').SettlementResult;
 
@@ -17,7 +17,7 @@ var uuid4 = require('UuidHelper').uuid4,
 function Settlement(name) {
     this.uuid = uuid4();
     this.name = name;
-    this.identities = [];
+    this.id = [];
     this.items = [];
 }
 

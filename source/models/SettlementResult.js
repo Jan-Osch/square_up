@@ -8,7 +8,6 @@ var uuid4 = require('./../UuidHelper.js').uuid4,
  * @field items {Array} array of Items
  */
 
-
 /**
  *
  * @param items {Array} of Items
@@ -38,11 +37,14 @@ SettlementResult.prototype.calculateSettlementResult = function () {
 SettlementResult.prototype.addItem = function (item) {
     var that = this;
     _.forEach(item.valuesToPay, function (valueMap, uuidToPay) {
-        if (!uuidToPay in that.settlementValuesToPay) {
+        if (!(uuidToPay in that.settlementValuesToPay)) {
             that.settlementValuesToPay[uuidToPay] = {};
         }
         _.forEach(valueMap, function (value, uuidToBePaid) {
-            if (!uuidToBePaid in that.settlementValuesToPay[uuidToPay]) {
+            if (uuidToBePaid in that.settlementValuesToPay[uuidToPay]) {
+                that.settlementValuesToPay[uuidToPay][uuidToBePaid] += value;
+            }
+            else{
                 that.settlementValuesToPay[uuidToPay][uuidToBePaid] = value;
             }
         })

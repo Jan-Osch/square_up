@@ -40,12 +40,12 @@ function Item(name, price, identitiesPaid, identitiesToPay, valuesPayed) {
 
 Item.prototype.validateData = function () {
     var that = this;
-    var total = 0;
+
     assert.equal(_.intersection(that.identitiesPaid, Object.keys(that.valuesPaid)).length, that.identitiesPaid.length, 'Item.identitiesPaid have to be the same as keys of Item.valuesPaid');
-    _.forEach(this.valuesPaid, function (valuePaid, uuidPaid) {
+    var total = _.reduce(this.valuesPaid, function (memo, valuePaid) {
         assert(valuePaid > 0, 'ValuePaid must be a positive integer');
-        total += valuePaid;
-    });
+        return memo + valuePaid
+    }, 0);
     assert.equal(total, that.price, "Item.valuesPaid have to sum up to price");
 };
 
@@ -72,7 +72,7 @@ Item.prototype.calculateOverpaidProportions = function () {
     var totalOverpaid = 0;
     var pricePerIdentity = round(that.price / that.identitiesToPay.length);
     _.forEach(that.valuesPaid, function (valuePaid, uuidPaid) {
-        if (that.identitiesToPay.indexOf(uuidPaid) >= 0) {
+        if (_.contains(that.identitiesToPay, uuidPaid)) {
             overpaid = valuePaid - pricePerIdentity;
         }
         else {
