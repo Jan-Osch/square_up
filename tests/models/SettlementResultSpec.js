@@ -43,11 +43,11 @@ describe('SettlementResult', function () {
                 'A': {
                     'B': 20
                 },
-                'C' :{
+                'C': {
                     'B': 15
                 },
-                'F' : {
-                    'G' :40
+                'F': {
+                    'G': 40
                 }
             }
         };
@@ -59,7 +59,7 @@ describe('SettlementResult', function () {
         expect(settlementResult.settlementValuesToPay['C']['B']).toEqual(15);
         expect(settlementResult.settlementValuesToPay['F']['G']).toEqual(40);
     });
-    it('clearSettlement cleans Values that Two Identities have to pay each other', function(){
+    it('clearSettlement cleans Values that Two Identities have to pay each other', function () {
         settlementResult = new SettlementResult([]);
         settlementResult.settlementValuesToPay = {
             'A': {
@@ -75,5 +75,87 @@ describe('SettlementResult', function () {
         expect(settlementResult.settlementValuesToPay['A']['B']).toEqual(15);
         expect(settlementResult.settlementValuesToPay['B']['A']).not.toBeDefined();
         expect(settlementResult.settlementValuesToPay['B']['C']).toEqual(10);
+    });
+    it('valuesToBePaidForIdentity is computed correctly when items are added', function () {
+        var mockItem1 = {
+            uuid: '1',
+            valuesToPay: {
+                'A': {
+                    'B': 15
+                },
+                'C': {
+                    'B': 20
+                }
+            }
+        };
+        var mockItem2 = {
+            uuid: '2',
+            valuesToPay: {
+                'A': {
+                    'B': 10
+                },
+                'D': {
+                    'B': 5
+                }
+            }
+        };
+        var expected = {
+            '1': {
+                'A': 15,
+                'C': 20
+            },
+            '2': {
+                'A': 10,
+                'D': 5
+            }
+        };
+        settlementResult = new SettlementResult([mockItem1, mockItem2]);
+
+        expect(settlementResult.valuesToBePaidForIdentity).toBeDefined();
+        expect(settlementResult.valuesToBePaidForIdentity['B']).toBeDefined();
+        expect(settlementResult.valuesToBePaidForIdentity['B']).toEqual(expected);
+    });
+    it('valuesToBePayForIdentity is computed correctly when items are added', function () {
+        var mockItem1 = {
+            uuid: '1',
+            valuesToPay: {
+                'A': {
+                    'B': 15,
+                    'C': 10
+                },
+                'C': {
+                    'B': 20
+                }
+            }
+        };
+        var mockItem2 = {
+            uuid: '2',
+            valuesToPay: {
+                'A': {
+                    'B': 10,
+                    'D' :104
+                },
+                'D': {
+                    'B': 5
+                }
+            }
+        };
+        var expected = {
+            '1': {
+                'B': 15,
+                'C': 10
+            },
+            '2': {
+                'B': 10,
+                'D': 104
+            }
+        };
+        settlementResult = new SettlementResult([mockItem1, mockItem2]);
+
+        expect(settlementResult.valuesToPayForIdentity).toBeDefined();
+        expect(settlementResult.valuesToPayForIdentity['A']).toBeDefined();
+        expect(settlementResult.valuesToPayForIdentity['A']).toEqual(expected);
     })
+
+
 });

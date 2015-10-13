@@ -16,6 +16,8 @@ var uuid4 = require('./../UuidHelper.js').uuid4,
 function SettlementResult(items) {
     this.uuid = uuid4();
     this.settlementValuesToPay = {};
+    this.valuesToPayForIdentity = {};
+    this.valuesToBePaidForIdentity = {};
     this.items = items;
     this.calculateSettlementResult();
 }
@@ -25,8 +27,8 @@ function SettlementResult(items) {
  */
 SettlementResult.prototype.calculateSettlementResult = function () {
     var that = this;
-    this.settlementValuesToPay = {}; //clean previous results
-    _.forEach(that.items, that.addItem);
+    that.settlementValuesToPay = {}; //clean previous results
+    _.forEach(that.items, that.addItem, that);
     that.clearSettlement();
 };
 
@@ -37,16 +39,34 @@ SettlementResult.prototype.calculateSettlementResult = function () {
 SettlementResult.prototype.addItem = function (item) {
     var that = this;
     _.forEach(item.valuesToPay, function (valueMap, uuidToPay) {
-        if (!(uuidToPay in that.settlementValuesToPay)) {
+        if (!that.settlementValuesToPay[uuidToPay]) {
             that.settlementValuesToPay[uuidToPay] = {};
         }
         _.forEach(valueMap, function (value, uuidToBePaid) {
             if (uuidToBePaid in that.settlementValuesToPay[uuidToPay]) {
                 that.settlementValuesToPay[uuidToPay][uuidToBePaid] += value;
             }
-            else{
+            else {
                 that.settlementValuesToPay[uuidToPay][uuidToBePaid] = value;
             }
+
+            //valuesToBePaidForIdentity
+            if(!that.valuesToBePaidForIdentity[uuidToBePaid]){
+                that.valuesToBePaidForIdentity[uuidToBePaid] = {};
+            }
+            if(!that.valuesToBePaidForIdentity[uuidToBePaid][item.uuid]){
+                that.valuesToBePaidForIdentity[uuidToBePaid][item.uuid] = {}
+            }
+            that.valuesToBePaidForIdentity[uuidToBePaid][item.uuid][uuidToPay] =value;
+
+            //valuesToPayForIdentity
+            if(!that.valuesToPayForIdentity[uuidToPay]){
+                that.valuesToPayForIdentity[uuidToPay] = {};
+            }
+            if(!that.valuesToPayForIdentity[uuidToPay][item.uuid]){
+                that.valuesToPayForIdentity[uuidToPay][item.uuid] = {};
+            }
+            that.valuesToPayForIdentity[uuidToPay][item.uuid][uuidToBePaid] = value;
         })
     });
 };
