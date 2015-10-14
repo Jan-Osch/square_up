@@ -23,10 +23,10 @@ describe('SettlementResult', function () {
             }
         };
         settlementResult.addItem(mock1);
-        expect(settlementResult.settlementValuesToPay).toBeDefined();
-        expect(settlementResult.settlementValuesToPay['A']).toBeDefined();
-        expect(settlementResult.settlementValuesToPay['A']['B']).toEqual(10);
-        expect(settlementResult.settlementValuesToPay['A']['C']).toEqual(20);
+        expect(settlementResult.valuesToPay).toBeDefined();
+        expect(settlementResult.valuesToPay['A']).toBeDefined();
+        expect(settlementResult.valuesToPay['A']['B']).toEqual(10);
+        expect(settlementResult.valuesToPay['A']['C']).toEqual(20);
     });
     it('addItem works for two Items', function () {
         settlementResult = new SettlementResult([]);
@@ -53,15 +53,15 @@ describe('SettlementResult', function () {
         };
         settlementResult.addItem(mock1);
         settlementResult.addItem(mock2);
-        expect(settlementResult.settlementValuesToPay).toBeDefined();
-        expect(settlementResult.settlementValuesToPay['A']['B']).toEqual(30);
-        expect(settlementResult.settlementValuesToPay['A']['C']).toEqual(20);
-        expect(settlementResult.settlementValuesToPay['C']['B']).toEqual(15);
-        expect(settlementResult.settlementValuesToPay['F']['G']).toEqual(40);
+        expect(settlementResult.valuesToPay).toBeDefined();
+        expect(settlementResult.valuesToPay['A']['B']).toEqual(30);
+        expect(settlementResult.valuesToPay['A']['C']).toEqual(20);
+        expect(settlementResult.valuesToPay['C']['B']).toEqual(15);
+        expect(settlementResult.valuesToPay['F']['G']).toEqual(40);
     });
     it('clearSettlement cleans Values that Two Identities have to pay each other', function () {
         settlementResult = new SettlementResult([]);
-        settlementResult.settlementValuesToPay = {
+        settlementResult.valuesToPay = {
             'A': {
                 'B': 30
             },
@@ -71,12 +71,12 @@ describe('SettlementResult', function () {
             }
         };
         settlementResult.clearSettlement();
-        expect(settlementResult.settlementValuesToPay).toBeDefined();
-        expect(settlementResult.settlementValuesToPay['A']['B']).toEqual(15);
-        expect(settlementResult.settlementValuesToPay['B']['A']).not.toBeDefined();
-        expect(settlementResult.settlementValuesToPay['B']['C']).toEqual(10);
+        expect(settlementResult.valuesToPay).toBeDefined();
+        expect(settlementResult.valuesToPay['A']['B']).toEqual(15);
+        expect(settlementResult.valuesToPay['B']['A']).not.toBeDefined();
+        expect(settlementResult.valuesToPay['B']['C']).toEqual(10);
     });
-    it('valuesToBePaidForIdentity is computed correctly when items are added', function () {
+    it('valuesToBePaidPerItem is computed correctly when items are added', function () {
         var mockItem1 = {
             uuid: '1',
             valuesToPay: {
@@ -111,9 +111,9 @@ describe('SettlementResult', function () {
         };
         settlementResult = new SettlementResult([mockItem1, mockItem2]);
 
-        expect(settlementResult.valuesToBePaidForIdentity).toBeDefined();
-        expect(settlementResult.valuesToBePaidForIdentity['B']).toBeDefined();
-        expect(settlementResult.valuesToBePaidForIdentity['B']).toEqual(expected);
+        expect(settlementResult.valuesToBePaidPerItem).toBeDefined();
+        expect(settlementResult.valuesToBePaidPerItem['B']).toBeDefined();
+        expect(settlementResult.valuesToBePaidPerItem['B']).toEqual(expected);
     });
     it('valuesToBePayForIdentity is computed correctly when items are added', function () {
         var mockItem1 = {
@@ -152,9 +152,9 @@ describe('SettlementResult', function () {
         };
         settlementResult = new SettlementResult([mockItem1, mockItem2]);
 
-        expect(settlementResult.valuesToPayForIdentity).toBeDefined();
-        expect(settlementResult.valuesToPayForIdentity['A']).toBeDefined();
-        expect(settlementResult.valuesToPayForIdentity['A']).toEqual(expected);
+        expect(settlementResult.valuesToPayPerItem).toBeDefined();
+        expect(settlementResult.valuesToPayPerItem['A']).toBeDefined();
+        expect(settlementResult.valuesToPayPerItem['A']).toEqual(expected);
     })
 
 

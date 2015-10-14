@@ -4,7 +4,7 @@ var uuid4 = require('./../UuidHelper.js').uuid4,
 /**
  * Class for holding Settlement Result
  * @field uuid {Uuid}
- * @field settlementValuesToPay {Object} a map <uuidToPay>:<uuidToBePaid>:<Value>
+ * @field valuesToPay {Object} a map <uuidToPay>:<uuidToBePaid>:<Value>
  * @field items {Array} array of Items
  */
 
@@ -15,10 +15,15 @@ var uuid4 = require('./../UuidHelper.js').uuid4,
  */
 function SettlementResult(items) {
     this.uuid = uuid4();
-    this.settlementValuesToPay = {};
-    this.valuesToPayForIdentity = {};
-    this.valuesToBePaidForIdentity = {};
     this.items = items;
+    this.valuesToPay = {};
+    this.valuesToPayPerItem = {};
+    this.valuesToBePaidPerItem = {};
+    this.allIdentities = [];
+    this.identitiesToBePaid = [];
+    this.identitiesToPay = [];
+    this.totalValuesToPay = {};
+    this.totalValuesToBePaid = {};
     this.calculateSettlementResult();
 }
 
@@ -27,76 +32,68 @@ function SettlementResult(items) {
  */
 SettlementResult.prototype.calculateSettlementResult = function () {
     var that = this;
-    that.settlementValuesToPay = {}; //clean previous results
     _.forEach(that.items, that.addItem, that);
-    that.clearSettlement();
+    that.allIdentities = _.uniq(that.allIdentities);
+    that.identitiesToBePaid = _.uniq(that.identitiesToBePaid);
+    that.identitiesToPay = _.uniq(that.identitiesToBePaid);
 };
 
 /**
- * Adds a single item to SettlementResult, adding all Values to Pay to settlementValuesToPay
+ * Adds a single item to SettlementResult, adding all Values to Pay to valuesToPay
  * @param item {Item}
  */
 SettlementResult.prototype.addItem = function (item) {
     var that = this;
+    that.addItemIdentities(item);
     _.forEach(item.valuesToPay, function (valueMap, uuidToPay) {
-        if (!that.settlementValuesToPay[uuidToPay]) {
-            that.settlementValuesToPay[uuidToPay] = {};
+        if (!that.valuesToPay[uuidToPay]) {
+            that.valuesToPay[uuidToPay] = {};
         }
         _.forEach(valueMap, function (value, uuidToBePaid) {
-            if (uuidToBePaid in that.settlementValuesToPay[uuidToPay]) {
-                that.settlementValuesToPay[uuidToPay][uuidToBePaid] += value;
-            }
-            else {
-                that.settlementValuesToPay[uuidToPay][uuidToBePaid] = value;
-            }
 
-            //valuesToBePaidForIdentity
-            if(!that.valuesToBePaidForIdentity[uuidToBePaid]){
-                that.valuesToBePaidForIdentity[uuidToBePaid] = {};
+            //valuesToPay
+            if (!that.valuesToPay[uuidToPay][uuidToBePaid]) {
+                that.valuesToPay[uuidToPay][uuidToBePaid] = 0
             }
-            if(!that.valuesToBePaidForIdentity[uuidToBePaid][item.uuid]){
-                that.valuesToBePaidForIdentity[uuidToBePaid][item.uuid] = {}
-            }
-            that.valuesToBePaidForIdentity[uuidToBePaid][item.uuid][uuidToPay] =value;
+            that.valuesToPay[uuidToPay][uuidToBePaid] += value;
 
-            //valuesToPayForIdentity
-            if(!that.valuesToPayForIdentity[uuidToPay]){
-                that.valuesToPayForIdentity[uuidToPay] = {};
+            //valuesToBePaidPerItem
+            if (!that.valuesToBePaidPerItem[uuidToBePaid]) {
+                that.valuesToBePaidPerItem[uuidToBePaid] = {};
             }
-            if(!that.valuesToPayForIdentity[uuidToPay][item.uuid]){
-                that.valuesToPayForIdentity[uuidToPay][item.uuid] = {};
+            if (!that.valuesToBePaidPerItem[uuidToBePaid][item.uuid]) {
+                that.valuesToBePaidPerItem[uuidToBePaid][item.uuid] = {}
             }
-            that.valuesToPayForIdentity[uuidToPay][item.uuid][uuidToBePaid] = value;
+            that.valuesToBePaidPerItem[uuidToBePaid][item.uuid][uuidToPay] = value;
+
+            //valuesToPayPerItem
+            if (!that.valuesToPayPerItem[uuidToPay]) {
+                that.valuesToPayPerItem[uuidToPay] = {};
+            }
+            if (!that.valuesToPayPerItem[uuidToPay][item.uuid]) {
+                that.valuesToPayPerItem[uuidToPay][item.uuid] = {};
+            }
+            that.valuesToPayPerItem[uuidToPay][item.uuid][uuidToBePaid] = value;
+
+            //total values
+            if (!that.totalValuesToBePaid[uuidToBePaid]) {
+                that.totalValuesToBePaid[uuidToBePaid] = 0;
+            }
+            that.totalValuesToBePaid[uuidToBePaid] += value;
+            if (!that.totalValuesToPay[uuidToPay]) {
+                that.totalValuesToPay[uuidToPay] = 0;
+            }
+            that.totalValuesToPay += value;
         })
     });
 };
 
-/**
- * If two identities have to pay each other it subtracts smaller value to pay from the higher.
- * If a value to pay is 0 then it is removed from the settlement result
- */
-SettlementResult.prototype.clearSettlement = function () {
+SettlementResult.prototype.addItemIdentities = function (item) {
     var that = this;
-    _.forEach(that.settlementValuesToPay, function (valueMap, uuidToPay) {
-        _.forEach(valueMap, function (value, uuidToBePaid) {
-
-            if (uuidToBePaid in that.settlementValuesToPay && uuidToPay in that.settlementValuesToPay[uuidToBePaid]) {
-                if (that.settlementValuesToPay[uuidToBePaid][uuidToPay] > that.settlementValuesToPay[uuidToPay][uuidToBePaid]) {
-                    that.settlementValuesToPay[uuidToBePaid][uuidToPay] -= that.settlementValuesToPay[uuidToPay][uuidToBePaid];
-                    delete that.settlementValuesToPay[uuidToPay][uuidToBePaid];
-                }
-                else if (that.settlementValuesToPay[uuidToBePaid][uuidToPay] < that.settlementValuesToPay[uuidToPay][uuidToBePaid]) {
-                    that.settlementValuesToPay[uuidToPay][uuidToBePaid] -= that.settlementValuesToPay[uuidToBePaid][uuidToPay];
-                    delete that.settlementValuesToPay[uuidToBePaid][uuidToPay];
-                }
-                else {
-                    delete that.settlementValuesToPay[uuidToBePaid][uuidToPay];
-                    delete that.settlementValuesToPay[uuidToPay][uuidToBePaid]
-                }
-
-            }
-        })
-    });
+    that.identitiesToPay.push(item.identitiesToPay);
+    that.identitiesToBePaid.push(item.identitiesPaid);
+    that.allIdentities.push(item.identitiesToPay);
+    that.allIdentities.push(item.identitiesPaid);
 };
 
 exports.SettlementResult = SettlementResult;
